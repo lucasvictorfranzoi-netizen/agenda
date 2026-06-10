@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Minha Semana</title>
+
+<!-- Faz o app se comportar como aplicativo ao "Adicionar à tela inicial" -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Minha Semana">
+<meta name="theme-color" content="#FBF6EE">
+
+<!-- PWA: instalável, com ícone e funcionamento offline -->
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
+
+<!-- Fontes (se estiver offline, cai pra fonte do sistema automaticamente) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#FBF6EE;
+    --bg-elev:#FFFFFF;
+    --ink:#221E1A;
+    --ink-soft:#7A7166;
+    --ink-faint:#A89E90;
+    --line:#EAE0D0;
+    --line-strong:#DDD1BD;
+    --accent:#C75B39;
+    --accent-deep:#A8472B;
+    --accent-soft:#F6E5DC;
+    --ok:#3F7F5B;
+    --shadow:0 1px 2px rgba(34,30,26,.04), 0 8px 24px rgba(34,30,26,.06);
+    --shadow-lg:0 12px 40px rgba(34,30,26,.18);
+    --radius:16px;
+    --radius-sm:11px;
+    --sans:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --serif:'Fraunces',Georgia,'Times New Roman',serif;
+    --maxw:560px;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:contain;
+  }
+  /* textura sutil de fundo */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(1200px 600px at 100% -10%, rgba(199,91,57,.05), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(63,127,91,.045), transparent 55%);
+  }
+  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;min-height:100vh;}
+
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input,select{font-family:inherit;font-size:16px;color:var(--ink);}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    background:rgba(251,246,238,.86);
+    backdrop-filter:saturate(180%) blur(12px);
+    -webkit-backdrop-filter:saturate(180%) blur(12px);
+    border-bottom:1px solid var(--line);
+    padding:max(14px,env(safe-area-inset-top)) 18px 12px;
+  }
+  .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .title{
+    font-family:var(--serif);font-weight:600;font-size:27px;letter-spacing:-.01em;
+    line-height:1.05;color:var(--ink);
+    border:none;background:none;padding:2px 4px;margin:-2px -4px;border-radius:8px;
+    width:auto;max-width:78%;outline:none;
+  }
+  .title:focus{background:var(--accent-soft);}
+  .iconbtn{
+    width:42px;height:42px;flex:0 0 auto;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--bg-elev);border:1px solid var(--line);box-shadow:var(--shadow);
+    color:var(--ink);transition:transform .12s ease, background .12s;
+  }
+  .iconbtn:active{transform:scale(.92);}
+  .iconbtn svg{width:20px;height:20px;}
+
+  .weeknav{display:flex;align-items:center;gap:8px;margin-top:13px;}
+  .navarrow{
+    width:38px;height:38px;border-radius:11px;background:var(--bg-elev);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);transition:transform .12s;
+  }
+  .navarrow:active{transform:scale(.9);}
+  .navarrow svg{width:18px;height:18px;color:var(--ink-soft);}
+  .weekrange{
+    flex:1;text-align:center;font-weight:600;font-size:15px;letter-spacing:.01em;
+    color:var(--ink);padding:9px 6px;border-radius:11px;background:transparent;
+    display:flex;flex-direction:column;line-height:1.15;
+  }
+  .weekrange small{font-weight:500;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-top:1px;}
+  .today-pill{
+    font-size:12.5px;font-weight:600;color:var(--accent);
+    border:1px solid var(--accent-soft);background:var(--accent-soft);
+    padding:9px 13px;border-radius:11px;white-space:nowrap;transition:transform .12s;
+  }
+  .today-pill:active{transform:scale(.93);}
+
+  /* ---------- DIAS ---------- */
+  main{padding:8px 16px 130px;}
+  .day{margin-top:18px;}
+  .day-head{display:flex;align-items:baseline;gap:9px;padding:0 4px 8px;}
+  .day-name{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:-.01em;text-transform:capitalize;}
+  .day-date{font-size:13px;color:var(--ink-faint);font-weight:500;}
+  .day.is-today .day-name{color:var(--accent);}
+  .day.is-today .day-head::after{
+    content:"hoje";margin-left:auto;align-self:center;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.07em;color:#fff;background:var(--accent);
+    padding:3px 9px;border-radius:20px;
+  }
+
+  .card{
+    background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  .day.is-today .card{border-color:var(--line-strong);box-shadow:0 0 0 2px var(--accent-soft), var(--shadow);}
+
+  .task{
+    display:flex;align-items:center;gap:12px;padding:13px 15px;
+    border-bottom:1px solid var(--line);position:relative;transition:background .12s;
+  }
+  .task:last-child{border-bottom:none;}
+  .task:active{background:#FAF4EA;}
+  .check{
+    flex:0 0 auto;width:23px;height:23px;border-radius:7px;border:2px solid var(--line-strong);
+    background:#fff;display:flex;align-items:center;justify-content:center;transition:all .15s;
+  }
+  .check svg{width:14px;height:14px;color:#fff;opacity:0;transform:scale(.5);transition:all .15s;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .t-body{flex:1;min-width:0;}
+  .t-name{font-size:15.5px;font-weight:500;color:var(--ink);transition:color .15s;line-height:1.3;}
+  .t-meta{font-size:12.5px;color:var(--ink-faint);margin-top:1px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .badge-rec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);}
+  .t-time{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-soft);}
+
+  .task.done .check{background:var(--ok);border-color:var(--ok);}
+  .task.done .check svg{opacity:1;transform:scale(1);}
+  .task.done .t-name{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--ink-faint);}
+  .task.done .dot{opacity:.4;}
+
+  .t-del{
+    flex:0 0 auto;width:30px;height:30px;border-radius:8px;color:var(--ink-faint);
+    display:flex;align-items:center;justify-content:center;margin:-4px -6px -4px 0;
+  }
+  .t-del:active{background:#F3ECE0;color:var(--accent);}
+  .t-del svg{width:16px;height:16px;}
+
+  .empty-day{padding:14px 15px;color:var(--ink-faint);font-size:13.5px;font-style:italic;border-bottom:1px solid var(--line);}
+  .addday{
+    width:100%;text-align:left;padding:12px 15px;font-size:13.5px;font-weight:600;color:var(--accent);
+    display:flex;align-items:center;gap:8px;transition:background .12s;
+  }
+  .addday:active{background:#FAF4EA;}
+  .addday svg{width:16px;height:16px;}
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed;z-index:35;right:max(18px,calc((100vw - var(--maxw))/2 + 18px));
+    bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px));
+    height:56px;padding:0 22px 0 18px;border-radius:30px;
+    background:var(--accent);color:#fff;font-weight:700;font-size:15px;
+    display:flex;align-items:center;gap:9px;box-shadow:0 6px 20px rgba(199,91,57,.4);
+    transition:transform .14s, box-shadow .14s;
+  }
+  .fab:active{transform:scale(.94);box-shadow:0 3px 12px rgba(199,91,57,.4);}
+  .fab svg{width:22px;height:22px;}
+
+  /* ---------- SHEET / MODAL ---------- */
+  .scrim{
+    position:fixed;inset:0;z-index:50;background:rgba(34,30,26,.42);
+    opacity:0;pointer-events:none;transition:opacity .25s;
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  }
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;z-index:51;left:0;right:0;bottom:0;
+    max-width:var(--maxw);margin:0 auto;
+    background:var(--bg);border-radius:22px 22px 0 0;
+    box-shadow:var(--shadow-lg);
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.22,.61,.36,1);
+    max-height:92vh;display:flex;flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .sheet.open{transform:translateY(0);}
+  .grab{width:38px;height:4px;border-radius:4px;background:var(--line-strong);margin:11px auto 4px;flex:0 0 auto;}
+  .sheet-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 18px 12px;flex:0 0 auto;
+  }
+  .sheet-title{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-.01em;}
+  .closeb{width:34px;height:34px;border-radius:50%;background:var(--bg-elev);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);}
+  .closeb svg{width:18px;height:18px;}
+  .sheet-body{overflow-y:auto;padding:0 18px 22px;-webkit-overflow-scrolling:touch;}
+
+  /* abas */
+  .tabs{display:flex;gap:6px;background:var(--bg-elev);border:1px solid var(--line);border-radius:13px;padding:4px;margin-bottom:18px;}
+  .tab{flex:1;padding:9px 2px;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--ink-soft);text-align:center;transition:all .15s;}
+  .tab.active{background:var(--ink);color:var(--bg);box-shadow:var(--shadow);}
+
+  /* formulários */
+  .field{margin-bottom:15px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+  .field input[type=text],.field input[type=time],.field input[type=date],.field select{
+    width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line-strong);
+    background:var(--bg-elev);outline:none;transition:border .15s, box-shadow .15s;
+  }
+  .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:6px;line-height:1.4;}
+
+  .days-pick{display:flex;gap:6px;}
+  .daybtn{
+    flex:1;height:42px;border-radius:11px;border:1px solid var(--line-strong);background:var(--bg-elev);
+    font-weight:700;font-size:13px;color:var(--ink-soft);transition:all .12s;
+  }
+  .daybtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  .swatches{display:flex;gap:9px;flex-wrap:wrap;}
+  .swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;transition:transform .12s;}
+  .swatch.on{border-color:var(--ink);transform:scale(1.1);}
+  .swatch:active{transform:scale(.9);}
+
+  .btn{
+    width:100%;padding:15px;border-radius:13px;font-size:15.5px;font-weight:700;
+    background:var(--accent);color:#fff;transition:transform .12s, background .12s;
+    box-shadow:0 4px 14px rgba(199,91,57,.28);
+  }
+  .btn:active{transform:scale(.98);}
+  .btn.ghost{background:var(--bg-elev);color:var(--ink);border:1px solid var(--line-strong);box-shadow:none;}
+  .btn.danger{background:var(--bg-elev);color:var(--accent-deep);border:1px solid var(--accent-soft);box-shadow:none;}
+  .btn-row{display:flex;gap:10px;margin-top:6px;}
+
+  /* listas dentro do gerenciador */
+  .mlist{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;}
+  .mitem{
+    display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--bg-elev);
+    border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);
+  }
+  .mitem .dot{width:11px;height:11px;}
+  .mi-body{flex:1;min-width:0;}
+  .mi-name{font-weight:600;font-size:15px;}
+  .mi-sub{font-size:12.5px;color:var(--ink-faint);margin-top:1px;}
+  .mi-act{display:flex;gap:4px;}
+  .mi-act button{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);border:1px solid var(--line);background:var(--bg);}
+  .mi-act button:active{background:var(--accent-soft);color:var(--accent);}
+  .mi-act svg{width:16px;height:16px;}
+  .addnew{
+    width:100%;padding:14px;border-radius:13px;border:1.5px dashed var(--line-strong);
+    color:var(--accent);font-weight:700;font-size:14.5px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:transparent;transition:background .12s;
+  }
+  .addnew:active{background:var(--accent-soft);}
+  .addnew svg{width:18px;height:18px;}
+
+  .emptymsg{text-align:center;color:var(--ink-faint);font-size:14px;padding:24px 10px;font-style:italic;}
+
+  .backup-note{font-size:13.5px;color:var(--ink-soft);line-height:1.55;background:var(--bg-elev);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:16px;}
+  .backup-note b{color:var(--ink);}
+
+  /* ---------- SELETOR DE VISÃO (Mês / Semana) ---------- */
+  .viewseg{display:flex;gap:6px;background:var(--bg-elev);border:1px solid var(--line);border-radius:13px;padding:4px;margin-top:13px;}
+  .vbtn{flex:1;padding:9px 4px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink-soft);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .vbtn svg{width:16px;height:16px;}
+  .vbtn.on{background:var(--ink);color:var(--bg);box-shadow:var(--shadow);}
+
+  /* ---------- CALENDÁRIO (visão mês, estilo Google Calendar) ---------- */
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin:2px 0 8px;}
+  .cal-weekdays span{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);padding:4px 0;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);}
+  .cal-cell{background:var(--bg-elev);min-height:64px;padding:6px 3px 5px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:background .12s;}
+  .cal-cell:active{background:#FAF4EA;}
+  .cal-cell.out{background:#FBF8F2;}
+  .cal-cell.out .cal-num{color:var(--ink-faint);opacity:.5;}
+  .cal-num{font-size:14px;font-weight:600;min-width:27px;height:27px;padding:0 4px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .cal-cell.wknd .cal-num{color:var(--accent-deep);}
+  .cal-cell.today .cal-num{background:var(--accent);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(199,91,57,.35);}
+  .cal-dots{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-content:flex-start;max-width:100%;min-height:6px;}
+  .cal-dot{width:6px;height:6px;border-radius:50%;}
+  .cal-more{font-size:9px;font-weight:700;color:var(--ink-faint);line-height:6px;margin-left:1px;}
+
+  /* tarefas dentro do detalhe do dia (ao tocar num dia do mês) */
+  .day-task{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);transition:background .12s;}
+  .day-task:active{background:#FAF4EA;}
+  .day-task:last-of-type{border-bottom:none;}
+  .day-task .check{flex:0 0 auto;width:23px;height:23px;border-radius:7px;border:2px solid var(--line-strong);background:#fff;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .day-task .check svg{width:14px;height:14px;color:#fff;opacity:0;transform:scale(.5);transition:all .15s;}
+  .day-task.done .check{background:var(--ok);border-color:var(--ok);}
+  .day-task.done .check svg{opacity:1;transform:scale(1);}
+  .day-task.done .t-name{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--ink-faint);}
+  .day-task.done .dot{opacity:.4;}
+  .day-empty{text-align:center;color:var(--ink-faint);font-size:14px;font-style:italic;padding:18px 0;}
+
+  .toast{
+    position:fixed;z-index:80;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:30px;font-size:14px;font-weight:600;
+    box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- TELA DE BLOQUEIO ---------- */
+  .lockscreen{
+    position:fixed;inset:0;z-index:200;display:none;
+    background:var(--bg);
+    align-items:center;justify-content:center;padding:24px;
+  }
+  .lockscreen.show{display:flex;}
+  .lockscreen::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(900px 500px at 50% -10%, rgba(199,91,57,.08), transparent 60%);
+  }
+  .lock-card{position:relative;width:100%;max-width:340px;text-align:center;}
+  .lock-ico{
+    width:66px;height:66px;border-radius:20px;margin:0 auto 18px;
+    background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lock-ico svg{width:32px;height:32px;}
+  .lock-title{font-family:var(--serif);font-size:25px;font-weight:600;letter-spacing:-.01em;}
+  .lock-sub{color:var(--ink-soft);font-size:14.5px;margin:6px 0 20px;}
+  .lock-input{
+    width:100%;padding:15px 16px;border-radius:13px;border:1px solid var(--line-strong);
+    background:var(--bg-elev);outline:none;text-align:center;font-size:17px;letter-spacing:.04em;
+    transition:border .15s, box-shadow .15s;
+  }
+  .lock-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .lock-error{color:var(--accent-deep);font-size:13.5px;font-weight:600;min-height:20px;margin:10px 0 6px;}
+  .lock-forgot{display:block;width:100%;margin-top:14px;color:var(--ink-faint);font-size:13px;font-weight:600;padding:8px;}
+  .lock-forgot:active{color:var(--accent);}
+
+  /* ---------- VISÃO HOJE ---------- */
+  .tv-head{margin:6px 2px 16px;}
+  .tv-prog{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em;}
+  .tv-bar{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:10px;}
+  .tv-bar span{display:block;height:100%;background:var(--ok);border-radius:6px;transition:width .35s ease;}
+  .tv-list{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .tv-task{display:flex;align-items:center;gap:10px;padding:13px 14px 13px 6px;border-bottom:1px solid var(--line);background:var(--bg-elev);transition:background .12s;}
+  .tv-task:last-child{border-bottom:none;}
+  .tv-task:active{background:#FAF4EA;}
+  .tv-task.dragging{opacity:.96;background:#fff;box-shadow:var(--shadow-lg);border-bottom-color:transparent;border-radius:12px;}
+  .tv-grip{flex:0 0 auto;width:30px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);cursor:grab;touch-action:none;}
+  .tv-grip:active{cursor:grabbing;}
+  .tv-grip svg{width:18px;height:18px;}
+  .tv-task.done .check{background:var(--ok);border-color:var(--ok);}
+  .tv-task.done .check svg{opacity:1;transform:scale(1);}
+  .tv-task.done .t-name{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--ink-faint);}
+  .tv-task.done .dot{opacity:.4;}
+  .t-push{flex:0 0 auto;width:32px;height:32px;border-radius:9px;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--bg);}
+  .t-push:active{background:var(--accent-soft);color:var(--accent);}
+  .t-push svg{width:16px;height:16px;}
+  .tv-tom{display:block;width:100%;text-align:center;margin-top:12px;color:var(--ink-soft);font-size:13.5px;font-weight:600;padding:11px;border-radius:12px;background:var(--bg-elev);border:1px solid var(--line);}
+  .tv-tom:active{background:#FAF4EA;}
+
+  @media (max-width:380px){
+    .title{font-size:24px;}
+    .daybtn{font-size:12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="toprow">
+      <input id="appTitle" class="title" value="Minha Semana" maxlength="28" spellcheck="false" aria-label="Nome da agenda">
+      <button class="iconbtn" id="openManage" aria-label="Gerenciar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="viewseg">
+      <button class="vbtn" data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>Hoje</button>
+      <button class="vbtn" data-view="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.3"/><circle cx="3.5" cy="12" r="1.3"/><circle cx="3.5" cy="18" r="1.3"/></svg>Semana</button>
+      <button class="vbtn" data-view="month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="22"/><line x1="15" y1="4" x2="15" y2="22"/></svg>Mês</button>
+    </div>
+    <div class="weeknav">
+      <button class="navarrow" id="prevWeek" aria-label="Semana anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="weekrange" id="weekRange"></div>
+      <button class="navarrow" id="nextWeek" aria-label="Próxima semana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <button class="today-pill" id="goToday">Hoje</button>
+    </div>
+  </header>
+
+  <main id="week"></main>
+  <main id="month" style="display:none"></main>
+  <main id="todayv" style="display:none"></main>
+</div>
+
+<button class="fab" id="fabAdd">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Tarefa
+</button>
+
+<!-- ====== SHEET GENÉRICO ====== -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div class="sheet-title" id="sheetTitle">Título</div>
+    <button class="closeb" id="closeSheet" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ====== TELA DE BLOQUEIO ====== -->
+<div class="lockscreen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="lock-title">Agenda bloqueada</div>
+    <div class="lock-sub">Digite sua senha para desbloquear.</div>
+    <input type="password" id="lockPass" class="lock-input" placeholder="Senha" autocomplete="current-password" inputmode="text">
+    <div class="lock-error" id="lockError"></div>
+    <button class="btn" id="lockUnlock">Desbloquear</button>
+    <button class="lock-forgot" id="lockForgot">Esqueci a senha</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MINHA SEMANA — agenda semanal 100% customizável
+   Tudo é salvo no próprio aparelho (localStorage). Sem servidor.
+   Customize à vontade: cores no :root, textos abaixo, etc.
+   ============================================================ */
+
+/* ---------- 1. Armazenamento seguro (cai pra memória se bloqueado) ---------- */
+const Store = (() => {
+  let mem = {}, persist = true;
+  try { localStorage.setItem('__test__','1'); localStorage.removeItem('__test__'); }
+  catch(e){ persist = false; }
+  return {
+    persist,
+    get(k){ try { return persist ? localStorage.getItem(k) : (mem[k] ?? null); } catch(e){ return mem[k] ?? null; } },
+    set(k,v){ try { persist ? localStorage.setItem(k,v) : (mem[k]=v); } catch(e){ mem[k]=v; } }
+  };
+})();
+const KEY = 'minha-semana-v1';
+
+/* ---------- 2. Paleta de cores para categorias ---------- */
+const PALETTE = ['#C75B39','#3F7F5B','#D9A441','#4B5FAD','#C2548A','#5C6B73','#7A8450','#8B5E34','#2E7D6F','#B23A48'];
+
+/* ---------- 3. Estado inicial (exemplos que você pode apagar) ---------- */
+function seed(){
+  return {
+    title: 'Minha Semana',
+    categories: [
+      { id: cid(), name: 'Trabalho', color: '#C75B39' },
+      { id: cid(), name: 'Pessoal',  color: '#4B5FAD' },
+      { id: cid(), name: 'Saúde',    color: '#3F7F5B' }
+    ],
+    recurring: [],   // preenchido logo abaixo p/ usar os ids das categorias
+    oneoff: {},      // { 'YYYY-MM-DD': [ {id,name,time,categoryId,done} ] }
+    doneRec: {}      // { 'recId|YYYY-MM-DD': true }
+  };
+}
+function cid(){ return 'c'+Math.random().toString(36).slice(2,9); }
+
+/* ---------- 3b. Criptografia / trava (Web Crypto API; exige HTTPS — GitHub Pages OK) ---------- */
+const CRYPTO_OK = !!(window.crypto && window.crypto.subtle);
+let cryptoKey = null;     // CryptoKey em memória quando a trava está ativa e desbloqueada
+let cryptoSalt = null;    // Uint8Array (salt do PBKDF2)
+let pendingLock = null;   // envelope criptografado aguardando a senha na inicialização
+
+const b64 = (bytes)=>btoa(String.fromCharCode(...new Uint8Array(bytes)));
+const unb64 = (str)=>Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+
+async function deriveKey(pass, salt){
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+  );
+}
+async function makeEnvelope(plaintext){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(plaintext));
+  const out = new Uint8Array(iv.length + ct.byteLength);
+  out.set(iv, 0); out.set(new Uint8Array(ct), iv.length);
+  return { v:1, enc:true, salt: b64(cryptoSalt), payload: b64(out) };
+}
+async function openEnvelope(pass, env){
+  const salt = unb64(env.salt);
+  const key = await deriveKey(pass, salt);
+  const data = unb64(env.payload);
+  const iv = data.slice(0,12), ct = data.slice(12);
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct); // lança erro se a senha estiver errada
+  return { key, salt, json: new TextDecoder().decode(pt) };
+}
+
+let state = load();
+function load(){
+  const raw = Store.get(KEY);
+  if(raw){
+    try {
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.enc){ pendingLock = parsed; return seedEmpty(); }  // bloqueado: placeholder até desbloquear
+      if(parsed) return parsed;
+    } catch(e){}
+  }
+  // primeira vez: cria exemplos
+  const s = seed();
+  const trab = s.categories[0].id, saude = s.categories[2].id;
+  s.recurring = [
+    { id:cid(), name:'Reunião de equipe', days:[1], time:'09:00', categoryId:trab,  startDate:null, endDate:null },
+    { id:cid(), name:'Academia',          days:[1,3,5], time:'07:00', categoryId:saude, startDate:null, endDate:null },
+    { id:cid(), name:'Revisar metas da semana', days:[5], time:'16:00', categoryId:trab, startDate:null, endDate:null }
+  ];
+  return s;
+}
+
+/* ---------- 3c. Persistência (texto puro ou criptografado, gravações serializadas) ---------- */
+let writeChain = Promise.resolve();
+function save(){ writeChain = writeChain.then(persistNow).catch(e=>console.error('save', e)); }
+async function persistNow(){
+  const json = JSON.stringify(state);
+  if(cryptoKey){ Store.set(KEY, JSON.stringify(await makeEnvelope(json))); }
+  else { Store.set(KEY, json); }
+}
+
+/* ---------- 4. Datas ---------- */
+let cursor = mondayOf(new Date());           // segunda-feira da semana exibida
+let mRef = startOfMonth(new Date());         // 1º dia do mês exibido (visão mês)
+let view = 'today';  // abre sempre no dia de hoje
+function mondayOf(d){
+  const x = new Date(d); x.setHours(0,0,0,0);
+  const wd = (x.getDay()+6)%7;               // 0 = segunda
+  x.setDate(x.getDate()-wd);
+  return x;
+}
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function sameDay(a,b){ return iso(a)===iso(b); }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function addMonths(d,n){ return new Date(d.getFullYear(), d.getMonth()+n, 1); }
+const WEEKDAY_FULL = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+const WEEKDAY_SHORT = ['D','S','T','Q','Q','S','S'];          // dom..sáb (cabeçalho do seletor)
+const PICK_ORDER = [1,2,3,4,5,6,0];                            // seg..dom para os botões
+const MONTHS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+/* ---------- 5. Render da semana ---------- */
+const weekEl = document.getElementById('week');
+const monthEl = document.getElementById('month');
+const todayEl = document.getElementById('todayv');
+const today = new Date(); today.setHours(0,0,0,0);
+
+function catById(id){ return state.categories.find(c=>c.id===id); }
+
+function recurringFor(dateObj){
+  const wd = dateObj.getDay();
+  const dstr = iso(dateObj);
+  return state.recurring
+    .filter(r=>{
+      if(!r.days.includes(wd)) return false;
+      if(r.startDate && dstr < r.startDate) return false;
+      if(r.endDate   && dstr > r.endDate)   return false;
+      return true;
+    })
+    .map(r=>({ kind:'rec', id:r.id, name:r.name, time:r.time, categoryId:r.categoryId,
+               done: !!state.doneRec[r.id+'|'+dstr] }));
+}
+function oneoffFor(dstr){
+  return (state.oneoff[dstr]||[]).map(t=>({ kind:'one', ...t }));
+}
+
+function renderWeek(scroll){
+  document.getElementById('appTitle').value = state.title;
+  const end = addDays(cursor,6);
+  const sameMonth = cursor.getMonth()===end.getMonth();
+  const range = sameMonth
+    ? `${cursor.getDate()} – ${end.getDate()} de ${MONTHS[cursor.getMonth()]}`
+    : `${cursor.getDate()} ${MONTHS[cursor.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+  document.getElementById('weekRange').innerHTML = `${range}<small>${cursor.getFullYear()}</small>`;
+
+  weekEl.innerHTML = '';
+  let todayEl = null;
+  for(let i=0;i<7;i++){
+    const d = addDays(cursor,i);
+    const dstr = iso(d);
+    const isToday = sameDay(d,today);
+
+    let tasks = [...recurringFor(d), ...oneoffFor(dstr)]
+      .sort((a,b)=>{
+        const ta = a.time||'99:99', tb = b.time||'99:99';
+        if(ta!==tb) return ta<tb?-1:1;
+        return 0;
+      });
+    tasks = orderedTasks(dstr, tasks);
+
+    const sec = document.createElement('section');
+    sec.className = 'day'+(isToday?' is-today':'');
+    if(isToday) todayEl = sec;
+
+    let html = `<div class="day-head">
+        <span class="day-name">${WEEKDAY_FULL[d.getDay()]}</span>
+        <span class="day-date">${d.getDate()} ${MONTHS[d.getMonth()]}</span>
+      </div><div class="card">`;
+
+    if(tasks.length===0){
+      html += `<div class="empty-day">Nada por aqui ainda.</div>`;
+    } else {
+      tasks.forEach(t=>{
+        const cat = catById(t.categoryId);
+        const color = cat ? cat.color : '#A89E90';
+        html += `<div class="task ${t.done?'done':''}" data-kind="${t.kind}" data-id="${t.id}" data-date="${dstr}">
+            <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="dot" style="background:${color}"></span>
+            <span class="t-body">
+              <span class="t-name">${esc(t.name)}</span>
+              <span class="t-meta">
+                ${t.time?`<span class="t-time">${t.time}</span>`:''}
+                ${cat?`<span>${esc(cat.name)}</span>`:''}
+                ${t.kind==='rec'?`<span class="badge-rec">recorrente</span>`:''}
+              </span>
+            </span>
+            ${t.kind==='one'?`<button class="t-push" data-push="${t.id}" data-pushfrom="${dstr}" aria-label="Empurrar pra amanhã"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button><button class="t-del" data-del="${t.id}" data-date="${dstr}" aria-label="Apagar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:''}
+          </div>`;
+      });
+    }
+    html += `<button class="addday" data-addday="${dstr}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar tarefa do dia
+      </button></div>`;
+    sec.innerHTML = html;
+    weekEl.appendChild(sec);
+  }
+  // rola até hoje se a semana exibida for a atual
+  if(scroll && todayEl && sameDay(mondayOf(today),cursor)){
+    setTimeout(()=>todayEl.scrollIntoView({behavior:'smooth',block:'start'}),120);
+  }
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- 5b. Render do MÊS (estilo Google Calendar) ---------- */
+function renderMonth(){
+  document.getElementById('appTitle').value = state.title;
+  document.getElementById('weekRange').innerHTML =
+    `${MONTHS_FULL[mRef.getMonth()]}<small>${mRef.getFullYear()}</small>`;
+
+  const startWd = (mRef.getDay()+6)%7;        // 0 = segunda
+  const gridStart = addDays(mRef, -startWd);   // segunda da 1ª semana visível
+
+  let html = `<div class="cal-weekdays">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=>`<span>${d}</span>`).join('')}</div><div class="cal-grid">`;
+  for(let i=0;i<42;i++){
+    const d = addDays(gridStart,i);
+    const dstr = iso(d);
+    const out = d.getMonth()!==mRef.getMonth();
+    const isToday = sameDay(d,today);
+    const wknd = (d.getDay()===0 || d.getDay()===6);
+    const items = [...recurringFor(d), ...oneoffFor(dstr)]
+      .sort((a,b)=>((a.time||'99:99')<(b.time||'99:99')?-1:1));
+    let dots = '';
+    items.slice(0,4).forEach(t=>{
+      const cat = catById(t.categoryId);
+      dots += `<span class="cal-dot" style="background:${cat?cat.color:'#A89E90'}"></span>`;
+    });
+    const more = items.length>4 ? `<span class="cal-more">+${items.length-4}</span>` : '';
+    html += `<div class="cal-cell ${out?'out':''} ${isToday?'today':''} ${wknd?'wknd':''}" data-day="${dstr}">
+        <span class="cal-num">${d.getDate()}</span>
+        <span class="cal-dots">${dots}${more}</span>
+      </div>`;
+  }
+  monthEl.innerHTML = html + `</div>`;
+}
+
+/* ---------- 5c. Alterna qual visão é mostrada ---------- */
+function render(scroll){
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('on', b.dataset.view===view));
+  const showNav = view!=='today';  // setas de período não fazem sentido na visão Hoje
+  document.getElementById('prevWeek').style.display = showNav?'':'none';
+  document.getElementById('nextWeek').style.display = showNav?'':'none';
+  document.getElementById('goToday').style.display  = showNav?'':'none';
+  weekEl.style.display='none'; monthEl.style.display='none'; todayEl.style.display='none';
+  if(view==='today'){ todayEl.style.display=''; renderToday(); }
+  else if(view==='week'){ weekEl.style.display=''; renderWeek(scroll); }
+  else { monthEl.style.display=''; renderMonth(); }
+}
+function refresh(){ if(view==='today') renderToday(); else if(view==='week') renderWeek(false); else renderMonth(); }
+
+/* ---------- 5e. Ordenação manual (arrastar) por dia ---------- */
+function orderedTasks(dstr, items){
+  const ord = state.order && state.order[dstr];
+  if(!ord || !ord.length) return items;
+  const pos = t => { const i = ord.indexOf(t.kind+':'+t.id); return i<0 ? 1e6 : i; };
+  return items.map((t,i)=>[t,i]).sort((a,b)=> (pos(a[0])-pos(b[0])) || (a[1]-b[1])).map(p=>p[0]);
+}
+
+/* empurra uma tarefa avulsa pro dia seguinte */
+function pushTask(id, fromISO){
+  const arr = state.oneoff[fromISO] || [];
+  const i = arr.findIndex(t=>t.id===id);
+  if(i<0) return;
+  const [task] = arr.splice(i,1);
+  const nd = iso(addDays(new Date(fromISO+'T00:00:00'), 1));
+  (state.oneoff[nd] ||= []).push(task);
+  if(state.order && state.order[fromISO]) state.order[fromISO] = state.order[fromISO].filter(tk=>tk!=='one:'+id);
+  save(); refresh(); toast('Movida pra amanhã');
+}
+
+/* ---------- 5f. VISÃO HOJE ---------- */
+function renderToday(){
+  document.getElementById('appTitle').value = state.title;
+  const d = today, dstr = iso(d);
+  const wd = WEEKDAY_FULL[d.getDay()];
+  document.getElementById('weekRange').innerHTML =
+    `${wd.charAt(0).toUpperCase()+wd.slice(1)}<small>${d.getDate()} ${MONTHS[d.getMonth()]} · ${d.getFullYear()}</small>`;
+
+  let items = orderedTasks(dstr, [...recurringFor(d), ...oneoffFor(dstr)]
+    .sort((a,b)=>((a.time||'99:99')<(b.time||'99:99')?-1:1)));
+  const tot = items.length, done = items.filter(t=>t.done).length, pend = tot-done;
+
+  let head = `<div class="tv-head">
+      <div class="tv-prog">${ tot===0 ? 'Nenhuma tarefa hoje' : (pend===0 ? 'Tudo feito por hoje 🎉' : `Faltam ${pend} de ${tot}`) }</div>
+      ${ tot>0 ? `<div class="tv-bar"><span style="width:${Math.round(done/tot*100)}%"></span></div>` : '' }
+    </div>`;
+
+  let list = '<div class="tv-list" id="tvList">';
+  if(tot===0){
+    list += `<div class="day-empty">Dia livre. Aproveite, ou adicione algo abaixo.</div>`;
+  } else {
+    items.forEach(t=>{
+      const cat=catById(t.categoryId); const color=cat?cat.color:'#A89E90';
+      list += `<div class="tv-task ${t.done?'done':''}" data-kind="${t.kind}" data-id="${t.id}" data-token="${t.kind}:${t.id}">
+          <span class="tv-grip" data-grip aria-label="Arrastar para reordenar"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg></span>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="dot" style="background:${color}"></span>
+          <span class="t-body"><span class="t-name">${esc(t.name)}</span>
+            <span class="t-meta">${t.time?`<span class="t-time">${t.time}</span>`:''}${cat?`<span>${esc(cat.name)}</span>`:''}${t.kind==='rec'?`<span class="badge-rec">recorrente</span>`:''}</span>
+          </span>
+          ${t.kind==='one'?`<button class="t-push" data-pushtoday="${t.id}" aria-label="Empurrar pra amanhã"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>`:''}
+        </div>`;
+    });
+  }
+  list += '</div>';
+
+  let foot = `<button class="btn ghost" data-addtoday style="margin-top:16px">+ Adicionar tarefa de hoje</button>`;
+  const tIso = iso(addDays(d,1));
+  const tomN = [...recurringFor(addDays(d,1)), ...oneoffFor(tIso)].length;
+  if(tomN>0) foot += `<button class="tv-tom" data-gotom>Amanhã: ${tomN} tarefa(s) →</button>`;
+
+  todayEl.innerHTML = head + list + foot;
+  bindToday(dstr, tIso);
+}
+
+function bindToday(dstr, tIso){
+  todayEl.querySelectorAll('.tv-task').forEach(row=>{
+    row.addEventListener('click', e=>{
+      if(e.target.closest('[data-grip]') || e.target.closest('[data-pushtoday]')) return;
+      const kind=row.dataset.kind, id=row.dataset.id;
+      if(kind==='rec'){ const k=id+'|'+dstr; state.doneRec[k]?delete state.doneRec[k]:state.doneRec[k]=true; }
+      else { const t=(state.oneoff[dstr]||[]).find(x=>x.id===id); if(t)t.done=!t.done; }
+      save(); renderToday();
+    });
+  });
+  todayEl.querySelectorAll('[data-pushtoday]').forEach(b=>b.onclick=(e)=>{ e.stopPropagation(); pushTask(b.dataset.pushtoday, dstr); });
+  const add = todayEl.querySelector('[data-addtoday]'); if(add) add.onclick = ()=>openTaskSheet(dstr);
+  const gt = todayEl.querySelector('[data-gotom]'); if(gt) gt.onclick = ()=>openDaySheet(tIso);
+  todayEl.querySelectorAll('.tv-grip').forEach(grip=>{
+    grip.addEventListener('pointerdown', e=>startDrag(e, grip, dstr));
+  });
+}
+
+/* arrasta um item da lista de hoje e salva a nova ordem */
+function startDrag(e, grip, dstr){
+  e.preventDefault();
+  const list = document.getElementById('tvList');
+  const row = grip.closest('.tv-task');
+  row.classList.add('dragging');
+  try{ grip.setPointerCapture(e.pointerId); }catch(_){}
+  const move = ev=>{
+    const after = dragAfter(list, ev.clientY);
+    if(after==null){ list.appendChild(row); }
+    else if(after!==row){ list.insertBefore(row, after); }
+  };
+  const end = ()=>{
+    row.classList.remove('dragging');
+    grip.removeEventListener('pointermove', move);
+    grip.removeEventListener('pointerup', end);
+    grip.removeEventListener('pointercancel', end);
+    const tokens = [...list.querySelectorAll('.tv-task')].map(r=>r.dataset.token);
+    (state.order ||= {})[dstr] = tokens;
+    save();
+  };
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
+}
+function dragAfter(list, y){
+  const rows = [...list.querySelectorAll('.tv-task:not(.dragging)')];
+  for(const r of rows){ const b=r.getBoundingClientRect(); if(y < b.top + b.height/2) return r; }
+  return null;
+}
+
+/* toca num dia do mês -> abre o detalhe daquele dia */
+monthEl.addEventListener('click', e=>{
+  const cell = e.target.closest('.cal-cell');
+  if(cell) openDaySheet(cell.dataset.day);
+});
+
+/* ---------- 5d. Detalhe de um dia (lista de tarefas, marcar, adicionar) ---------- */
+function openDaySheet(dstr){
+  const d = new Date(dstr+'T00:00:00');
+  const wd = WEEKDAY_FULL[d.getDay()];
+  const title = `${wd.charAt(0).toUpperCase()+wd.slice(1)}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const tasks = orderedTasks(dstr, [...recurringFor(d), ...oneoffFor(dstr)]
+    .sort((a,b)=>((a.time||'99:99')<(b.time||'99:99')?-1:1)));
+
+  let body = '';
+  if(tasks.length===0){
+    body += `<div class="day-empty">Nada agendado neste dia.</div>`;
+  } else {
+    tasks.forEach(t=>{
+      const cat = catById(t.categoryId);
+      const color = cat ? cat.color : '#A89E90';
+      body += `<div class="day-task ${t.done?'done':''}" data-kind="${t.kind}" data-id="${t.id}">
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="dot" style="background:${color}"></span>
+          <span class="t-body"><span class="t-name">${esc(t.name)}</span>
+            <span class="t-meta">${t.time?`<span class="t-time">${t.time}</span>`:''}${cat?`<span>${esc(cat.name)}</span>`:''}${t.kind==='rec'?`<span class="badge-rec">recorrente</span>`:''}</span>
+          </span>
+          ${t.kind==='one'?`<button class="t-push" data-pushone="${t.id}" aria-label="Empurrar pra amanhã"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button><button class="t-del" data-delone="${t.id}" aria-label="Apagar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:''}
+        </div>`;
+    });
+  }
+  body += `<button class="btn" style="margin-top:18px" data-addhere>+ Adicionar tarefa do dia</button>`;
+  openSheet(title, body);
+
+  sheetBody.querySelectorAll('.day-task').forEach(row=>{
+    row.addEventListener('click', e=>{
+      if(e.target.closest('[data-delone]') || e.target.closest('[data-pushone]')) return;
+      const kind = row.dataset.kind, id = row.dataset.id;
+      if(kind==='rec'){ const k = id+'|'+dstr; state.doneRec[k] ? delete state.doneRec[k] : state.doneRec[k]=true; }
+      else { const t = (state.oneoff[dstr]||[]).find(x=>x.id===id); if(t) t.done=!t.done; }
+      row.classList.toggle('done'); save(); refresh();
+    });
+  });
+  sheetBody.querySelectorAll('[data-pushone]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    pushTask(b.dataset.pushone, dstr); openDaySheet(dstr);
+  });
+  sheetBody.querySelectorAll('[data-delone]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    state.oneoff[dstr] = (state.oneoff[dstr]||[]).filter(t=>t.id!==b.dataset.delone);
+    save(); refresh(); openDaySheet(dstr);
+  });
+  sheetBody.querySelector('[data-addhere]').onclick = ()=>openTaskSheet(dstr);
+}
+
+/* ---------- 6. Interações na semana ---------- */
+weekEl.addEventListener('click', e=>{
+  const push = e.target.closest('[data-push]');
+  if(push){ pushTask(push.dataset.push, push.dataset.pushfrom); return; }
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const id = del.dataset.del, date = del.dataset.date;
+    state.oneoff[date] = (state.oneoff[date]||[]).filter(t=>t.id!==id);
+    save(); refresh(); return;
+  }
+  const add = e.target.closest('[data-addday]');
+  if(add){ openTaskSheet(add.dataset.addday); return; }
+
+  const task = e.target.closest('.task');
+  if(task){
+    const kind = task.dataset.kind, id = task.dataset.id, date = task.dataset.date;
+    if(kind==='rec'){
+      const k = id+'|'+date;
+      state.doneRec[k] ? delete state.doneRec[k] : state.doneRec[k]=true;
+    } else {
+      const arr = state.oneoff[date]||[];
+      const t = arr.find(x=>x.id===id); if(t) t.done = !t.done;
+    }
+    task.classList.toggle('done');
+    save();
+  }
+});
+
+/* ---------- 7. Navegação ---------- */
+document.getElementById('prevWeek').onclick = ()=>{ if(view==='week') cursor=addDays(cursor,-7); else mRef=addMonths(mRef,-1); render(true); };
+document.getElementById('nextWeek').onclick = ()=>{ if(view==='week') cursor=addDays(cursor,7);  else mRef=addMonths(mRef,1);  render(true); };
+document.getElementById('goToday').onclick  = ()=>{ cursor=mondayOf(new Date()); mRef=startOfMonth(new Date()); render(true); };
+document.getElementById('weekRange').onclick= ()=>{ cursor=mondayOf(new Date()); mRef=startOfMonth(new Date()); render(true); };
+
+/* alterna entre Hoje / Semana / Mês */
+document.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
+  const v = b.dataset.view; if(v===view) return;
+  const t = new Date(); t.setHours(0,0,0,0);
+  if(v==='month'){ mRef = startOfMonth(view==='week' ? cursor : t); }
+  else if(v==='week'){
+    const monthIsToday = (t.getMonth()===mRef.getMonth() && t.getFullYear()===mRef.getFullYear());
+    cursor = (view==='month' && !monthIsToday) ? mondayOf(mRef) : mondayOf(t);
+  }
+  view = v; render(true);
+});
+
+/* título editável */
+const titleInput = document.getElementById('appTitle');
+titleInput.addEventListener('change', ()=>{ state.title = titleInput.value.trim()||'Minha Semana'; save(); });
+titleInput.addEventListener('blur', ()=>{ titleInput.value = state.title; });
+titleInput.addEventListener('keydown', e=>{ if(e.key==='Enter') titleInput.blur(); });
+
+/* ---------- 8. Sheet (modal inferior) ---------- */
+const scrim = document.getElementById('scrim');
+const sheet = document.getElementById('sheet');
+const sheetBody = document.getElementById('sheetBody');
+const sheetTitle = document.getElementById('sheetTitle');
+function openSheet(title, bodyHTML){
+  sheetTitle.textContent = title;
+  sheetBody.innerHTML = bodyHTML;
+  scrim.classList.add('open'); sheet.classList.add('open');
+}
+function closeSheet(){ scrim.classList.remove('open'); sheet.classList.remove('open'); }
+document.getElementById('closeSheet').onclick = closeSheet;
+scrim.onclick = closeSheet;
+
+/* ---------- 9. Adicionar TAREFA DO DIA (avulsa) ---------- */
+const fab = document.getElementById('fabAdd');
+fab.onclick = ()=>{
+  // adiciona ao "hoje" se ele estiver na semana exibida; senão ao primeiro dia
+  const t = new Date(); t.setHours(0,0,0,0);
+  if(view==='month'){ openTaskSheet(iso(t)); return; }
+  const target = (t>=cursor && t<=addDays(cursor,6)) ? iso(t) : iso(cursor);
+  openTaskSheet(target);
+};
+
+function catOptions(selected){
+  return state.categories.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)}</option>`).join('');
+}
+
+function openTaskSheet(dstr){
+  const d = new Date(dstr+'T00:00:00');
+  const label = `${WEEKDAY_FULL[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const body = `
+    <div class="field">
+      <label>O que precisa ser feito?</label>
+      <input type="text" id="f-name" placeholder="Ex.: Ligar para fornecedor" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Horário (opcional)</label>
+        <input type="time" id="f-time">
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="f-cat">${catOptions(state.categories[0]?.id)}</select>
+      </div>
+    </div>
+    <p class="hint">Esta tarefa fica só em <b>${label}</b>. Para algo que se repete toda semana, use ⚙ Gerenciar → Recorrentes.</p>
+    <button class="btn" id="f-save">Adicionar</button>`;
+  openSheet('Tarefa do dia', body);
+  const nameI = document.getElementById('f-name');
+  setTimeout(()=>nameI.focus(),200);
+  document.getElementById('f-save').onclick = ()=>{
+    const name = nameI.value.trim(); if(!name){ nameI.focus(); return; }
+    (state.oneoff[dstr] ||= []).push({
+      id:cid(), name, time:document.getElementById('f-time').value||null,
+      categoryId:document.getElementById('f-cat').value, done:false
+    });
+    save(); closeSheet(); refresh(); toast('Tarefa adicionada');
+  };
+  nameI.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('f-save').click(); });
+}
+
+/* ---------- 10. GERENCIAR (recorrentes / categorias / backup) ---------- */
+let activeTab = 'rec';
+document.getElementById('openManage').onclick = ()=> openManage('rec');
+
+function openManage(tab){
+  activeTab = tab;
+  const body = `
+    <div class="tabs">
+      <div class="tab ${tab==='rec'?'active':''}" data-tab="rec">Recorrentes</div>
+      <div class="tab ${tab==='cat'?'active':''}" data-tab="cat">Categorias</div>
+      <div class="tab ${tab==='bkp'?'active':''}" data-tab="bkp">Backup</div>
+      <div class="tab ${tab==='lock'?'active':''}" data-tab="lock">Trava</div>
+    </div>
+    <div id="tabContent"></div>`;
+  openSheet('Gerenciar', body);
+  sheetBody.querySelectorAll('.tab').forEach(t=>t.onclick=()=>openManage(t.dataset.tab));
+  renderTab();
+}
+function renderTab(){
+  const c = document.getElementById('tabContent');
+  if(activeTab==='rec') c.innerHTML = recList();
+  else if(activeTab==='cat') c.innerHTML = catList();
+  else if(activeTab==='bkp') c.innerHTML = backupPanel();
+  else c.innerHTML = lockPanel();
+  bindTab();
+}
+
+/* --- aba recorrentes --- */
+function recList(){
+  let items = state.recurring.length ? '<div class="mlist">' : '';
+  state.recurring.forEach(r=>{
+    const cat = catById(r.categoryId);
+    const ds = PICK_ORDER.filter(w=>r.days.includes(w)).map(w=>['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][PICK_ORDER.indexOf(w)]).join(' ');
+    let sub = [ds || '—'];
+    if(r.time) sub.push(r.time);
+    if(r.startDate||r.endDate) sub.push('período definido');
+    items += `<div class="mitem">
+        <span class="dot" style="background:${cat?cat.color:'#A89E90'}"></span>
+        <span class="mi-body"><div class="mi-name">${esc(r.name)}</div><div class="mi-sub">${sub.join(' · ')}</div></span>
+        <span class="mi-act">
+          <button data-edit-rec="${r.id}" aria-label="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button data-del-rec="${r.id}" aria-label="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+        </span>
+      </div>`;
+  });
+  if(state.recurring.length) items += '</div>';
+  else items = `<div class="emptymsg">Nenhuma tarefa recorrente.<br>Crie a primeira abaixo 👇</div>`;
+  return items + `<button class="addnew" data-new-rec><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova tarefa recorrente</button>`;
+}
+
+function recEditor(r){
+  const isNew = !r;
+  r = r || { id:cid(), name:'', days:[], time:'', categoryId:state.categories[0]?.id, startDate:null, endDate:null };
+  const dayBtns = PICK_ORDER.map((w,i)=>`<button type="button" class="daybtn ${r.days.includes(w)?'on':''}" data-day="${w}">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i]}</button>`).join('');
+  const body = `
+    <div class="field">
+      <label>Nome da tarefa</label>
+      <input type="text" id="r-name" value="${esc(r.name)}" placeholder="Ex.: Aula de inglês" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Repete em quais dias?</label>
+      <div class="days-pick" id="r-days">${dayBtns}</div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Horário (opcional)</label><input type="time" id="r-time" value="${r.time||''}"></div>
+      <div class="field"><label>Categoria</label><select id="r-cat">${catOptions(r.categoryId)}</select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Início (opcional)</label><input type="date" id="r-start" value="${r.startDate||''}"></div>
+      <div class="field"><label>Fim (opcional)</label><input type="date" id="r-end" value="${r.endDate||''}"></div>
+    </div>
+    <p class="hint">Deixe início/fim em branco para repetir sem prazo. Use as datas para tarefas que valem só num período (ex.: um curso de 3 meses).</p>
+    <button class="btn" id="r-save">${isNew?'Criar tarefa':'Salvar alterações'}</button>
+    <div class="btn-row"><button class="btn ghost" id="r-cancel">Voltar</button></div>`;
+  openSheet(isNew?'Nova recorrente':'Editar recorrente', body);
+
+  const days = new Set(r.days);
+  sheetBody.querySelectorAll('.daybtn').forEach(b=>{
+    b.onclick=()=>{ const w=+b.dataset.day; days.has(w)?days.delete(w):days.add(w); b.classList.toggle('on'); };
+  });
+  document.getElementById('r-cancel').onclick = ()=>openManage('rec');
+  document.getElementById('r-save').onclick = ()=>{
+    const name = document.getElementById('r-name').value.trim();
+    if(!name){ document.getElementById('r-name').focus(); return; }
+    if(days.size===0){ toast('Escolha pelo menos um dia'); return; }
+    const obj = {
+      id:r.id, name, days:[...days].sort(),
+      time: document.getElementById('r-time').value||null,
+      categoryId: document.getElementById('r-cat').value,
+      startDate: document.getElementById('r-start').value||null,
+      endDate: document.getElementById('r-end').value||null
+    };
+    const idx = state.recurring.findIndex(x=>x.id===r.id);
+    idx>=0 ? state.recurring[idx]=obj : state.recurring.push(obj);
+    save(); refresh(); openManage('rec'); toast(isNew?'Recorrente criada':'Salvo');
+  };
+  if(isNew) setTimeout(()=>document.getElementById('r-name').focus(),200);
+}
+
+/* --- aba categorias --- */
+function catList(){
+  let items = '<div class="mlist">';
+  state.categories.forEach(c=>{
+    const count = state.recurring.filter(r=>r.categoryId===c.id).length;
+    items += `<div class="mitem">
+        <span class="dot" style="background:${c.color}"></span>
+        <span class="mi-body"><div class="mi-name">${esc(c.name)}</div><div class="mi-sub">${count} recorrente(s)</div></span>
+        <span class="mi-act">
+          <button data-edit-cat="${c.id}" aria-label="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button data-del-cat="${c.id}" aria-label="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+        </span>
+      </div>`;
+  });
+  items += '</div>';
+  return items + `<button class="addnew" data-new-cat><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova categoria</button>`;
+}
+function catEditor(c){
+  const isNew = !c;
+  c = c || { id:cid(), name:'', color:PALETTE[state.categories.length % PALETTE.length] };
+  const sw = PALETTE.map(col=>`<button type="button" class="swatch ${col===c.color?'on':''}" data-color="${col}" style="background:${col}"></button>`).join('');
+  const body = `
+    <div class="field"><label>Nome</label><input type="text" id="c-name" value="${esc(c.name)}" placeholder="Ex.: Formato, Primo, Estudos..." autocomplete="off"></div>
+    <div class="field"><label>Cor</label><div class="swatches" id="c-sw">${sw}</div></div>
+    <button class="btn" id="c-save">${isNew?'Criar categoria':'Salvar'}</button>
+    <div class="btn-row"><button class="btn ghost" id="c-cancel">Voltar</button></div>`;
+  openSheet(isNew?'Nova categoria':'Editar categoria', body);
+  let color = c.color;
+  sheetBody.querySelectorAll('.swatch').forEach(s=>{
+    s.onclick=()=>{ color=s.dataset.color; sheetBody.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on')); s.classList.add('on'); };
+  });
+  document.getElementById('c-cancel').onclick = ()=>openManage('cat');
+  document.getElementById('c-save').onclick = ()=>{
+    const name = document.getElementById('c-name').value.trim();
+    if(!name){ document.getElementById('c-name').focus(); return; }
+    const obj = { id:c.id, name, color };
+    const idx = state.categories.findIndex(x=>x.id===c.id);
+    idx>=0 ? state.categories[idx]=obj : state.categories.push(obj);
+    save(); refresh(); openManage('cat'); toast(isNew?'Categoria criada':'Salvo');
+  };
+  if(isNew) setTimeout(()=>document.getElementById('c-name').focus(),200);
+}
+
+/* --- aba backup --- */
+function backupPanel(){
+  const status = Store.persist
+    ? 'Seus dados estão sendo salvos neste aparelho/navegador.'
+    : '⚠️ Salvamento permanente indisponível aqui (modo prévia). Funciona quando você abre o arquivo hospedado no celular.';
+  return `
+    <div class="backup-note">
+      <b>Como funciona:</b> tudo fica salvo no próprio aparelho — nada vai pra internet.
+      ${status}<br><br>
+      <b>Dica:</b> exporte um backup de vez em quando. É também assim que você leva seus dados para outro celular ou computador.
+    </div>
+    <button class="btn" data-cal>📅 Exportar pro calendário (.ics)</button>
+    <p class="hint" style="margin:8px 2px 16px">Gera um arquivo com suas tarefas recorrentes (com lembrete embutido) pra adicionar no Google/Apple Agenda. Aí o próprio celular te avisa na hora.</p>
+    <button class="btn ghost" data-export>Exportar backup (.json)</button>
+    <p class="hint" style="margin:8px 2px 16px">Atenção: o backup .json <b>não é criptografado</b> — guarde o arquivo em lugar seguro.</p>
+    <div class="btn-row">
+      <button class="btn ghost" data-import>Importar backup</button>
+      <button class="btn danger" data-reset>Limpar tudo</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none">`;
+}
+
+/* ---------- 11. Liga os botões de cada aba ---------- */
+function bindTab(){
+  // recorrentes
+  sheetBody.querySelectorAll('[data-new-rec]').forEach(b=>b.onclick=()=>recEditor(null));
+  sheetBody.querySelectorAll('[data-edit-rec]').forEach(b=>b.onclick=()=>recEditor(state.recurring.find(r=>r.id===b.dataset.editRec)));
+  sheetBody.querySelectorAll('[data-del-rec]').forEach(b=>b.onclick=()=>{
+    const r = state.recurring.find(x=>x.id===b.dataset.delRec);
+    if(confirm(`Excluir "${r.name}"? Isso remove a tarefa de todas as semanas.`)){
+      state.recurring = state.recurring.filter(x=>x.id!==r.id);
+      Object.keys(state.doneRec).forEach(k=>{ if(k.startsWith(r.id+'|')) delete state.doneRec[k]; });
+      save(); refresh(); renderTab(); toast('Excluída');
+    }
+  });
+  // categorias
+  sheetBody.querySelectorAll('[data-new-cat]').forEach(b=>b.onclick=()=>catEditor(null));
+  sheetBody.querySelectorAll('[data-edit-cat]').forEach(b=>b.onclick=()=>catEditor(state.categories.find(c=>c.id===b.dataset.editCat)));
+  sheetBody.querySelectorAll('[data-del-cat]').forEach(b=>b.onclick=()=>{
+    if(state.categories.length<=1){ toast('Mantenha ao menos uma categoria'); return; }
+    const c = state.categories.find(x=>x.id===b.dataset.delCat);
+    const used = state.recurring.filter(r=>r.categoryId===c.id).length;
+    const msg = used ? `Excluir "${c.name}"? ${used} tarefa(s) ficarão sem categoria.` : `Excluir "${c.name}"?`;
+    if(confirm(msg)){
+      state.categories = state.categories.filter(x=>x.id!==c.id);
+      const fallback = state.categories[0].id;
+      state.recurring.forEach(r=>{ if(r.categoryId===c.id) r.categoryId=fallback; });
+      Object.values(state.oneoff).flat().forEach(t=>{ if(t.categoryId===c.id) t.categoryId=fallback; });
+      save(); refresh(); renderTab(); toast('Excluída');
+    }
+  });
+  // backup
+  const exp = sheetBody.querySelector('[data-export]');
+  if(exp) exp.onclick = ()=>{
+    const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=`minha-semana-backup-${iso(new Date())}.json`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000); toast('Backup exportado');
+  };
+  const imp = sheetBody.querySelector('[data-import]');
+  if(imp){
+    const file = sheetBody.querySelector('#importFile');
+    imp.onclick = ()=>file.click();
+    file.onchange = ()=>{
+      const f = file.files[0]; if(!f) return;
+      const rd = new FileReader();
+      rd.onload = ()=>{ try{
+        const data = JSON.parse(rd.result);
+        if(!data.categories||!data.recurring) throw 0;
+        state = data; save(); refresh(); openManage('bkp'); toast('Backup importado');
+      }catch(e){ toast('Arquivo inválido'); } };
+      rd.readAsText(f);
+    };
+  }
+  const rst = sheetBody.querySelector('[data-reset]');
+  if(rst) rst.onclick = ()=>{
+    if(confirm('Apagar TODAS as tarefas e categorias? Não dá pra desfazer.')){
+      if(confirm('Tem certeza mesmo? Exporte um backup antes, se quiser.')){
+        Store.set(KEY,''); cryptoKey=null; cryptoSalt=null; state = seedEmpty(state.title); save(); refresh(); openManage('bkp'); toast('Tudo limpo');
+      }
+    }
+  };
+  // calendário (.ics)
+  const cal = sheetBody.querySelector('[data-cal]');
+  if(cal) cal.onclick = exportICS;
+  // trava por senha
+  const le = sheetBody.querySelector('[data-lock-enable]');  if(le) le.onclick = enableLock;
+  const ld = sheetBody.querySelector('[data-lock-disable]'); if(ld) ld.onclick = disableLock;
+  const lc = sheetBody.querySelector('[data-lock-change]');  if(lc) lc.onclick = changePass;
+}
+function seedEmpty(title){
+  return { title: title || 'Minha Semana',
+    categories:[{id:cid(),name:'Geral',color:'#C75B39'}],
+    recurring:[], oneoff:{}, doneRec:{} };
+}
+
+/* ---------- 11b. TRAVA POR SENHA (criptografia) ---------- */
+function lockPanel(){
+  if(!CRYPTO_OK){
+    return `<div class="backup-note">A trava com criptografia precisa do app aberto pela versão <b>https://</b> (no celular, pelo link do GitHub Pages). Aqui na prévia ela fica indisponível.</div>`;
+  }
+  if(cryptoKey){
+    return `
+      <div class="backup-note"><b>Trava ativada.</b> Seus dados ficam criptografados (AES-256) neste aparelho e só abrem com a sua senha — ninguém vê nem altera sem ela.</div>
+      <button class="btn ghost" data-lock-change>Trocar senha</button>
+      <div class="btn-row"><button class="btn danger" data-lock-disable>Desativar trava</button></div>`;
+  }
+  return `
+    <div class="backup-note">Proteja a agenda com uma senha. Os dados passam a ser <b>criptografados no aparelho</b> (AES-256) — mesmo quem pegar seu celular não consegue ler nem mudar nada sem a senha.<br><br><b>⚠️ Importante:</b> se você esquecer a senha, <b>não há como recuperar</b> — os dados ficam ilegíveis pra sempre. Não existe "esqueci minha senha". Exporte um backup antes, por garantia.</div>
+    <button class="btn" data-lock-enable>Ativar trava por senha</button>`;
+}
+
+function enableLock(){
+  openSheet('Ativar trava', `
+    <div class="field"><label>Crie uma senha</label><input type="password" id="lp1" placeholder="Mínimo 4 caracteres" autocomplete="new-password"></div>
+    <div class="field"><label>Confirme a senha</label><input type="password" id="lp2" placeholder="Repita a senha" autocomplete="new-password"></div>
+    <div class="lock-error" id="lpErr" style="text-align:left;min-height:18px"></div>
+    <p class="hint">Se esquecer, não há recuperação. Anote em lugar seguro.</p>
+    <button class="btn" id="lpGo">Ativar trava</button>
+    <div class="btn-row"><button class="btn ghost" id="lpCancel">Voltar</button></div>`);
+  document.getElementById('lpCancel').onclick = ()=>openManage('lock');
+  document.getElementById('lpGo').onclick = async ()=>{
+    const a=document.getElementById('lp1').value, b=document.getElementById('lp2').value, err=document.getElementById('lpErr');
+    if(a.length<4){ err.textContent='Use pelo menos 4 caracteres.'; return; }
+    if(a!==b){ err.textContent='As senhas não conferem.'; return; }
+    try{
+      cryptoSalt = crypto.getRandomValues(new Uint8Array(16));
+      cryptoKey = await deriveKey(a, cryptoSalt);
+      await persistNow();
+      openManage('lock'); toast('Trava ativada');
+    }catch(e){ cryptoKey=null; cryptoSalt=null; err.textContent='Não foi possível ativar a trava aqui.'; }
+  };
+  setTimeout(()=>document.getElementById('lp1').focus(),200);
+}
+
+function disableLock(){
+  if(!confirm('Desativar a trava? Os dados voltam a ficar sem senha neste aparelho.')) return;
+  cryptoKey=null; cryptoSalt=null;
+  persistNow();
+  openManage('lock'); toast('Trava desativada');
+}
+
+function changePass(){
+  openSheet('Trocar senha', `
+    <div class="field"><label>Nova senha</label><input type="password" id="cp1" placeholder="Mínimo 4 caracteres" autocomplete="new-password"></div>
+    <div class="field"><label>Confirme a nova senha</label><input type="password" id="cp2" autocomplete="new-password"></div>
+    <div class="lock-error" id="cpErr" style="text-align:left;min-height:18px"></div>
+    <button class="btn" id="cpGo">Salvar nova senha</button>
+    <div class="btn-row"><button class="btn ghost" id="cpCancel">Voltar</button></div>`);
+  document.getElementById('cpCancel').onclick = ()=>openManage('lock');
+  document.getElementById('cpGo').onclick = async ()=>{
+    const a=document.getElementById('cp1').value, b=document.getElementById('cp2').value, err=document.getElementById('cpErr');
+    if(a.length<4){ err.textContent='Use pelo menos 4 caracteres.'; return; }
+    if(a!==b){ err.textContent='As senhas não conferem.'; return; }
+    cryptoSalt = crypto.getRandomValues(new Uint8Array(16));
+    cryptoKey = await deriveKey(a, cryptoSalt);
+    await persistNow(); openManage('lock'); toast('Senha alterada');
+  };
+  setTimeout(()=>document.getElementById('cp1').focus(),200);
+}
+
+/* tela de desbloqueio (na inicialização, quando há dados criptografados) */
+function showLock(){
+  document.getElementById('lockScreen').classList.add('show');
+  setTimeout(()=>document.getElementById('lockPass').focus(),250);
+}
+async function doUnlock(){
+  const inp=document.getElementById('lockPass'), err=document.getElementById('lockError');
+  if(!CRYPTO_OK){ err.textContent='Abra pelo link https:// (versão hospedada).'; return; }
+  const pass=inp.value; if(!pass){ inp.focus(); return; }
+  try{
+    const { key, salt, json } = await openEnvelope(pass, pendingLock);
+    cryptoKey=key; cryptoSalt=salt; state=JSON.parse(json); pendingLock=null;
+    err.textContent=''; inp.value='';
+    document.getElementById('lockScreen').classList.remove('show');
+    render(true);
+  }catch(e){ err.textContent='Senha incorreta.'; inp.select(); }
+}
+document.getElementById('lockUnlock').onclick = doUnlock;
+document.getElementById('lockPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
+document.getElementById('lockForgot').onclick = ()=>{
+  if(confirm('Sem a senha não dá pra recuperar os dados criptografados. Apagar tudo e começar do zero? (Não dá pra desfazer.)')){
+    Store.set(KEY,''); pendingLock=null; cryptoKey=null; cryptoSalt=null; state=seedEmpty();
+    document.getElementById('lockScreen').classList.remove('show');
+    save(); render(true); toast('Começando do zero');
+  }
+};
+
+/* ---------- 11c. EXPORTAR PRO CALENDÁRIO (.ics) ---------- */
+function exportICS(){
+  const totalOne = Object.values(state.oneoff).reduce((n,a)=>n+(a?a.length:0),0);
+  if(state.recurring.length===0 && totalOne===0){ toast('Nada pra exportar'); return; }
+
+  const pad=n=>String(n).padStart(2,'0');
+  const DOW=['SU','MO','TU','WE','TH','FR','SA'];
+  const escICS=s=>String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const dt=(d,withTime)=> withTime
+    ? `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
+    : `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  const now=new Date();
+  const stamp=`${now.getUTCFullYear()}${pad(now.getUTCMonth()+1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Minha Semana//PT-BR//','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+
+  function firstOcc(days, fromISO){
+    let base=new Date(); base.setHours(0,0,0,0);
+    if(fromISO){ const f=new Date(fromISO+'T00:00:00'); if(f>base) base=f; }
+    for(let i=0;i<7;i++){ const d=addDays(base,i); if(days.includes(d.getDay())) return d; }
+    return base;
+  }
+  function alarm(name){ return ['BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${escICS(name)}`,'TRIGGER:-PT10M','END:VALARM']; }
+
+  // recorrentes -> eventos semanais (RRULE) com lembrete
+  state.recurring.forEach(r=>{
+    if(!r.days || !r.days.length) return;
+    const start=firstOcc(r.days, r.startDate);
+    const hasTime=!!r.time;
+    if(hasTime){ const [h,m]=r.time.split(':'); start.setHours(+h,+m,0,0); }
+    const byday=r.days.slice().sort().map(w=>DOW[w]).join(',');
+    let rrule=`FREQ=WEEKLY;BYDAY=${byday}`;
+    if(r.endDate){ const e=new Date(r.endDate+'T23:59:59'); rrule+=`;UNTIL=${dt(e,true)}`; }
+    L.push('BEGIN:VEVENT',`UID:rec-${r.id}@minha-semana`,`DTSTAMP:${stamp}`);
+    if(hasTime){ const e=new Date(start.getTime()+30*60000); L.push(`DTSTART:${dt(start,true)}`,`DTEND:${dt(e,true)}`); }
+    else { L.push(`DTSTART;VALUE=DATE:${dt(start,false)}`); }
+    L.push(`RRULE:${rrule}`,`SUMMARY:${escICS(r.name)}`);
+    if(hasTime) L.push(...alarm(r.name));
+    L.push('END:VEVENT');
+  });
+
+  // avulsas -> eventos únicos
+  Object.entries(state.oneoff).forEach(([dstr,arr])=>{
+    (arr||[]).forEach(t=>{
+      const d=new Date(dstr+'T00:00:00'); const hasTime=!!t.time;
+      if(hasTime){ const [h,m]=t.time.split(':'); d.setHours(+h,+m,0,0); }
+      L.push('BEGIN:VEVENT',`UID:one-${t.id}@minha-semana`,`DTSTAMP:${stamp}`);
+      if(hasTime){ const e=new Date(d.getTime()+30*60000); L.push(`DTSTART:${dt(d,true)}`,`DTEND:${dt(e,true)}`); }
+      else { L.push(`DTSTART;VALUE=DATE:${dt(d,false)}`); }
+      L.push(`SUMMARY:${escICS(t.name)}`);
+      if(hasTime) L.push(...alarm(t.name));
+      L.push('END:VEVENT');
+    });
+  });
+
+  L.push('END:VCALENDAR');
+  const blob=new Blob([L.join('\r\n')],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='minha-semana.ics'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000); toast('Calendário (.ics) exportado');
+}
+
+/* ---------- 12. Toast ---------- */
+let toastT;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'),1900);
+}
+
+/* ---------- 13. Start ---------- */
+if(pendingLock){ showLock(); }          // dados criptografados: pede a senha antes de tudo
+else { save(); render(true); }
+
+/* registra o service worker (funcionamento offline / instalação) */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
